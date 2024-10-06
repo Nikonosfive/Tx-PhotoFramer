@@ -81,6 +81,7 @@ textarea {
   border-bottom: 3px solid #ccc;
   z-index: 10000;
   width: 100vw;
+  white-space: nowrap
 }
 
 .toolbar label {
