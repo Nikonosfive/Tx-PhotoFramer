@@ -23,6 +23,10 @@
       <option value="Georgia">Georgia</option>
       <option value="Verdana">Verdana</option>
     </select>
+    <label for="frame-width-input">Frame Width (%)</label>
+    <input type="number" id="frame-width-input" placeholder="枠幅 (%)" min="1" max="50" value="5">
+    <label for="bottom-frame-height-input">Bottom Frame Height (%)</label>
+    <input type="number" id="bottom-frame-height-input" placeholder="下枠の高さ (%)" min="1" max="50" value="10">
     <button id="apply-text-btn" class="social_button" style="margin-left: 10px;">Apply</button>
     <button id="generate-url-btn" class="social_button">Get Query</button><a> 　　　</a>
   </div>
@@ -44,6 +48,8 @@
     const frameTextInput = document.getElementById('frame-text-input');
     const textSizeInput = document.getElementById('text-size-input');
     const fontSelect = document.getElementById('font-select');
+    const frameWidthInput = document.getElementById('frame-width-input');
+    const bottomFrameHeightInput = document.getElementById('bottom-frame-height-input');
     const applyTextBtn = document.getElementById('apply-text-btn');
     const saveAllBtn = document.getElementById('save-all-btn');
     const generateUrlBtn = document.getElementById('generate-url-btn');
@@ -56,7 +62,9 @@
       return {
         text: params.get('text') || '',
         size: parseFloat(params.get('size')) || 5,
-        font: params.get('font') || 'Arial'
+        font: params.get('font') || 'Arial',
+        frameWidth: parseFloat(params.get('frameWidth')) || 5,
+        bottomFrameHeight: parseFloat(params.get('bottomFrameHeight')) || 10
       };
     }
 
@@ -65,8 +73,10 @@
       const text = encodeURIComponent(frameTextInput.value);
       const size = textSizeInput.value;
       const font = encodeURIComponent(fontSelect.value);
+      const frameWidth = frameWidthInput.value;
+      const bottomFrameHeight = bottomFrameHeightInput.value;
       const baseUrl = window.location.origin + window.location.pathname;
-      return `${baseUrl}?text=${text}&size=${size}&font=${font}`;
+      return `${baseUrl}?text=${text}&size=${size}&font=${font}&frameWidth=${frameWidth}&bottomFrameHeight=${bottomFrameHeight}`;
     }
 
     // URLクエリパラメータを元に設定を反映する
@@ -80,6 +90,12 @@
       }
       if (params.font) {
         fontSelect.value = params.font;
+      }
+      if (params.frameWidth) {
+        frameWidthInput.value = params.frameWidth;
+      }
+      if (params.bottomFrameHeight) {
+        bottomFrameHeightInput.value = params.bottomFrameHeight;
       }
     }
 
@@ -95,18 +111,11 @@
     });
 
     // すべて保存ボタンのクリックイベント
-    saveAllBtn.addEventListener('click', async () => {
-      const resize = confirm("ダウンロード前に長辺を2048pxにリサイズしますか？\n[OK] リサイズしてダウンロード\n[キャンセル] そのままダウンロード");
-
+    saveAllBtn.addEventListener('click', () => {
       const canvases = document.querySelectorAll('canvas');
-      for (let index = 0; index < canvases.length; index++) {
-        const canvas = canvases[index];
-        if (resize) {
-          await resizeImage(canvas, 2048, index); // リサイズして保存
-        } else {
-          saveImage(canvas, index); // リサイズせずに保存
-        }
-      }
+      canvases.forEach((canvas, index) => {
+        saveImage(canvas, index);
+      });
     });
 
     // 設定クエリを生成・表示するボタンのクリックイベント
@@ -132,6 +141,8 @@
       const frameText = frameTextInput.value || 'Default Text'; // テキスト入力欄の内容
       const textSizePercent = parseFloat(textSizeInput.value) || 5; // テキストサイズ％
       const selectedFont = fontSelect.value || 'Arial'; // 選択されたフォント
+      const frameWidthPercent = parseFloat(frameWidthInput.value) || 5; // 枠幅％
+      const bottomFrameHeightPercent = parseFloat(bottomFrameHeightInput.value) || 10; // 下部枠の高さ％
 
       selectedFiles.forEach((file, index) => {
         const reader = new FileReader();
@@ -141,8 +152,8 @@
           image.onload = () => {
             // 高さと幅のうちの長い方を基準にする
             const longerSide = Math.max(image.width, image.height);
-            const frameSize = longerSide * 0.05;
-            const bottomFrameHeight = longerSide * 0.10;
+            const frameSize = longerSide * (frameWidthPercent / 100);
+            const bottomFrameHeight = longerSide * (bottomFrameHeightPercent / 100);
             const textSize = longerSide * (textSizePercent / 100); // 画像の長辺に対するテキストサイズ
             const container = document.createElement('div');
             container.classList.add('photo-container');
@@ -179,45 +190,14 @@
             photoDisplay.appendChild(container);
           };
         };
-        reader.readAsDataURL(file); // JPEG画像をそのまま読み込む
+        reader.readAsDataURL(file);
       });
     }
 
-    // 画像をリサイズして保存する機能
-    function resizeImage(canvas, maxSize, index) {
-      return new Promise((resolve) => {
-        const image = new Image();
-        image.src = canvas.toDataURL();
-
-        image.onload = () => {
-          const ratio = image.width / image.height;
-          let newWidth, newHeight;
-
-          if (image.width > image.height) {
-            newWidth = maxSize;
-            newHeight = maxSize / ratio;
-          } else {
-            newHeight = maxSize;
-            newWidth = maxSize * ratio;
-          }
-
-          const resizedCanvas = document.createElement('canvas');
-          resizedCanvas.width = newWidth;
-          resizedCanvas.height = newHeight;
-          const ctx = resizedCanvas.getContext('2d');
-          ctx.drawImage(image, 0, 0, newWidth, newHeight);
-
-          saveImage(resizedCanvas, index);
-          resolve(); // すべて完了したらPromiseを解決
-        };
-      });
-    }
-
-    // 画像を保存する機能
     function saveImage(canvas, index) {
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/jpeg');
-      link.download = `framed_photo_${index + 1}.jpg`;
+      link.download = `framed_image_${index + 1}.jpg`;
       link.click();
     }
   </script>
