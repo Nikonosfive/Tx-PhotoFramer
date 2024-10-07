@@ -195,6 +195,37 @@
       });
     }
 
+
+    function resizeImage(canvas, maxSize, index) {
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.src = canvas.toDataURL();
+
+        image.onload = () => {
+          const ratio = image.width / image.height;
+          let newWidth, newHeight;
+
+          if (image.width > image.height) {
+            newWidth = maxSize;
+            newHeight = maxSize / ratio;
+          } else {
+            newHeight = maxSize;
+            newWidth = maxSize * ratio;
+          }
+
+          const resizedCanvas = document.createElement('canvas');
+          resizedCanvas.width = newWidth;
+          resizedCanvas.height = newHeight;
+          const ctx = resizedCanvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+          saveImage(resizedCanvas, index);
+          resolve(); // すべて完了したらPromiseを解決
+        };
+      });
+    }
+
+    
     function saveImage(canvas, index) {
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/jpeg');
