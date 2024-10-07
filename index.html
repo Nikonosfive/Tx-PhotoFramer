@@ -133,7 +133,7 @@
           image.src = e.target.result;
           image.onload = () => {
             const frameWidth = image.width * 0.05;
-            const frameHeight = image.height * 0.05;
+            const frameHeight = image.width * 0.05;
             const bottomFrameHeight = image.height * 0.10;
             const textSize = image.width * (textSizePercent / 100); // 画像幅に対するテキストサイズ
             const container = document.createElement('div');
