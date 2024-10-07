@@ -95,11 +95,18 @@
     });
 
     // すべて保存ボタンのクリックイベント
-    saveAllBtn.addEventListener('click', () => {
+    saveAllBtn.addEventListener('click', async () => {
+      const resize = confirm("ダウンロード前に長辺を2048pxにリサイズしますか？\n[OK] リサイズしてダウンロード\n[キャンセル] そのままダウンロード");
+
       const canvases = document.querySelectorAll('canvas');
-      canvases.forEach((canvas, index) => {
-        saveImage(canvas, index);
-      });
+      for (let index = 0; index < canvases.length; index++) {
+        const canvas = canvases[index];
+        if (resize) {
+          await resizeImage(canvas, 2048, index); // リサイズして保存
+        } else {
+          saveImage(canvas, index); // リサイズせずに保存
+        }
+      }
     });
 
     // 設定クエリを生成・表示するボタンのクリックイベント
@@ -176,11 +183,41 @@
       });
     }
 
+    // 画像をリサイズして保存する機能
+    function resizeImage(canvas, maxSize, index) {
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.src = canvas.toDataURL();
+
+        image.onload = () => {
+          const ratio = image.width / image.height;
+          let newWidth, newHeight;
+
+          if (image.width > image.height) {
+            newWidth = maxSize;
+            newHeight = maxSize / ratio;
+          } else {
+            newHeight = maxSize;
+            newWidth = maxSize * ratio;
+          }
+
+          const resizedCanvas = document.createElement('canvas');
+          resizedCanvas.width = newWidth;
+          resizedCanvas.height = newHeight;
+          const ctx = resizedCanvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+          saveImage(resizedCanvas, index);
+          resolve(); // すべて完了したらPromiseを解決
+        };
+      });
+    }
+
     // 画像を保存する機能
     function saveImage(canvas, index) {
       const link = document.createElement('a');
-      link.download = `photo_frame_${index + 1}.jpg`; // 画像ファイル名
-      link.href = canvas.toDataURL('image/jpeg', 1.0); // JPEG形式で保存
+      link.href = canvas.toDataURL('image/jpeg');
+      link.download = `framed_photo_${index + 1}.jpg`;
       link.click();
     }
   </script>
